@@ -64,6 +64,7 @@ public class PeerConnectionClient {
     private static final int HD_VIDEO_HEIGHT = 720;
     private static final int BPS_IN_KBPS = 1000;
     private static final String RTCEVENTLOG_OUTPUT_DIR_NAME = "rtc_event_log";
+
     // Executor thread is started once in private ctor and is used for all
     // peer connection API calls to ensure new peer connection factory is
     // created on the same thread as previously destroyed factory.
