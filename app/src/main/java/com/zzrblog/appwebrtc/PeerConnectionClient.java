@@ -25,8 +25,12 @@ import org.webrtc.audio.AudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule;
 
 import java.io.File;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Timer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -50,7 +54,16 @@ public class PeerConnectionClient {
     private static final String VIDEO_VP8_INTEL_HW_ENCODER_FIELDTRIAL = "WebRTC-IntelVP8/Enabled/";
     private static final String DISABLE_WEBRTC_AGC_FIELDTRIAL =
             "WebRTC-Audio-MinimizeResamplingOnMobile/Enabled/";
-
+    private static final String AUDIO_CODEC_PARAM_BITRATE = "maxaveragebitrate";
+    private static final String AUDIO_ECHO_CANCELLATION_CONSTRAINT = "googEchoCancellation";
+    private static final String AUDIO_AUTO_GAIN_CONTROL_CONSTRAINT = "googAutoGainControl";
+    private static final String AUDIO_HIGH_PASS_FILTER_CONSTRAINT = "googHighpassFilter";
+    private static final String AUDIO_NOISE_SUPPRESSION_CONSTRAINT = "googNoiseSuppression";
+    private static final String DTLS_SRTP_KEY_AGREEMENT_CONSTRAINT = "DtlsSrtpKeyAgreement";
+    private static final int HD_VIDEO_WIDTH = 1280;
+    private static final int HD_VIDEO_HEIGHT = 720;
+    private static final int BPS_IN_KBPS = 1000;
+    private static final String RTCEVENTLOG_OUTPUT_DIR_NAME = "rtc_event_log";
     // Executor thread is started once in private ctor and is used for all
     // peer connection API calls to ensure new peer connection factory is
     // created on the same thread as previously destroyed factory.
@@ -414,9 +427,9 @@ public class PeerConnectionClient {
         this.signalingParameters = signalingParameters;
         executor.execute(() -> {
             try {
-                //createMediaConstraintsInternal();
-                //createPeerConnectionInternal();
-                //maybeCreateAndStartRtcEventLog();
+                createMediaConstraintsInternal();
+                createPeerConnectionInternal();
+                maybeCreateAndStartRtcEventLog();
             } catch (Exception e) {
                 reportError("Failed to create peer connection: " + e.getMessage());
                 throw e;
@@ -424,8 +437,32 @@ public class PeerConnectionClient {
         });
     }
 
+    private void createMediaConstraintsInternal() {
+        // Create video constraints if video call is enabled.
+    }
 
+    private void createPeerConnectionInternal() {
 
+    }
+
+    private void maybeCreateAndStartRtcEventLog() {
+        if (appContext == null || peerConnection == null) {
+            return;
+        }
+        if (!peerConnectionParameters.enableRtcEventLog) {
+            Log.d(TAG, "RtcEventLog is disabled.");
+            return;
+        }
+        rtcEventLog = new RtcEventLog(peerConnection);
+        rtcEventLog.start(createRtcEventLogOutputFile());
+    }
+    private File createRtcEventLogOutputFile() {
+        DateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_hhmm_ss", Locale.getDefault());
+        Date date = new Date();
+        final String outputFileName = "event_log_" + dateFormat.format(date) + ".log";
+        return new File(
+                appContext.getDir(RTCEVENTLOG_OUTPUT_DIR_NAME, Context.MODE_PRIVATE), outputFileName);
+    }
 
     public void close() {
         executor.execute(this ::closeInternal);
