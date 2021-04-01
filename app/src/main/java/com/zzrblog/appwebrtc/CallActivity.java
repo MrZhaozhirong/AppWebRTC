@@ -25,6 +25,8 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.FragmentTransaction;
 
+import com.zzrblog.appwebrtc.util.AppRTCUtils;
+
 import org.webrtc.Camera1Enumerator;
 import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
@@ -38,6 +40,7 @@ import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
 import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.ThreadUtils;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoFileRenderer;
 import org.webrtc.VideoFrame;
@@ -522,6 +525,27 @@ public class CallActivity extends AppCompatActivity implements
         }
         peerConnectionClient.createPeerConnection(
                 localProxyVideoSink, remoteSinks, videoCapturer, signalingParameters);
+        AppRTCUtils.assertIsTrue(signalingParameters != null);
+        if (signalingParameters.initiator) {
+            logAndToast("Creating OFFER...");
+            // Create offer. Offer SDP will be sent to answering client in
+            // PeerConnectionEvents.onLocalDescription event.
+            peerConnectionClient.createOffer();
+        } else {
+            if (params.offerSdp != null) {
+                peerConnectionClient.setRemoteDescription(params.offerSdp);
+                logAndToast("Creating ANSWER...");
+                // Create answer. Answer SDP will be sent to offering client in
+                // PeerConnectionEvents.onLocalDescription event.
+                peerConnectionClient.createAnswer();
+            }
+            if (params.iceCandidates != null) {
+                // Add remote ICE candidates from room.
+                for (IceCandidate iceCandidate : params.iceCandidates) {
+                    peerConnectionClient.addRemoteIceCandidate(iceCandidate);
+                }
+            }
+        }
     }
     private @Nullable VideoCapturer createVideoCapturer() {
         final VideoCapturer videoCapturer;
@@ -638,7 +662,7 @@ public class CallActivity extends AppCompatActivity implements
 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    //Start PeerConnection Client Events
+    //Start PeerConnectionClient.PeerConnectionEvents
     @Override
     public void onLocalDescription(SessionDescription sdp) {
 
@@ -688,7 +712,7 @@ public class CallActivity extends AppCompatActivity implements
     public void onPeerConnectionError(String description) {
 
     }
-    //End PeerConnection Client Events
+    //End PeerConnectionClient.PeerConnectionEvents
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
 
