@@ -12,18 +12,12 @@ import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.telephony.PhoneStateListener;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
-
-import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.fragment.app.FragmentTransaction;
 
 import com.zzrblog.appwebrtc.util.AppRTCUtils;
 
@@ -33,14 +27,12 @@ import org.webrtc.CameraEnumerator;
 import org.webrtc.EglBase;
 import org.webrtc.FileVideoCapturer;
 import org.webrtc.IceCandidate;
-import org.webrtc.Logging;
 import org.webrtc.PeerConnectionFactory;
 import org.webrtc.RendererCommon;
 import org.webrtc.ScreenCapturerAndroid;
 import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
 import org.webrtc.SurfaceViewRenderer;
-import org.webrtc.ThreadUtils;
 import org.webrtc.VideoCapturer;
 import org.webrtc.VideoFileRenderer;
 import org.webrtc.VideoFrame;
@@ -50,6 +42,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentTransaction;
 
 public class CallActivity extends AppCompatActivity implements
                                                     CallFragment.OnCallEvents,
@@ -523,6 +519,7 @@ public class CallActivity extends AppCompatActivity implements
         if (peerConnectionParameters.videoCallEnabled) {
             videoCapturer = createVideoCapturer();
         }
+        AppRTCUtils.assertIsTrue(peerConnectionClient!=null);
         peerConnectionClient.createPeerConnection(
                 localProxyVideoSink, remoteSinks, videoCapturer, signalingParameters);
         AppRTCUtils.assertIsTrue(signalingParameters != null);
@@ -665,7 +662,21 @@ public class CallActivity extends AppCompatActivity implements
     //Start PeerConnectionClient.PeerConnectionEvents
     @Override
     public void onLocalDescription(SessionDescription sdp) {
-
+        final long delta = System.currentTimeMillis() - callStartedTimeMs;
+        runOnUiThread(() -> {
+            if (appRtcClient != null) {
+                logAndToast("Sending " + sdp.type + ", delay=" + delta + "ms");
+                if (signalingParameters!=null && signalingParameters.initiator) {
+                    appRtcClient.sendOfferSdp(sdp);
+                } else {
+                    appRtcClient.sendAnswerSdp(sdp);
+                }
+                if (peerConnectionParameters.videoMaxBitrate > 0) {
+                    Log.d(TAG, "Set video maximum bitrate: " + peerConnectionParameters.videoMaxBitrate);
+                    peerConnectionClient.setVideoMaxBitrate(peerConnectionParameters.videoMaxBitrate);
+                }
+            }
+        });
     }
 
     @Override

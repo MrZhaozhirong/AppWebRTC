@@ -1,11 +1,8 @@
 package com.zzrblog.appwebrtc;
 
 import android.content.Context;
-import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.util.Log;
-
-import androidx.annotation.Nullable;
 
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
@@ -20,6 +17,7 @@ import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.RtpParameters;
 import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
 import org.webrtc.RtpTransceiver;
@@ -41,7 +39,6 @@ import org.webrtc.audio.JavaAudioDeviceModule;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -57,6 +54,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import androidx.annotation.Nullable;
 
 public class PeerConnectionClient {
     private static final String TAG = "PeerConnectionClient";
@@ -532,8 +531,8 @@ public class PeerConnectionClient {
             return;
         }
         Log.d(TAG, "Create PeerConnection.");
-        if (queuedRemoteCandidates==null)
-            queuedRemoteCandidates = new ArrayList<>();
+
+        queuedRemoteCandidates = new ArrayList<>();
 
         PeerConnection.RTCConfiguration rtcConfig =
                 new PeerConnection.RTCConfiguration(signalingParameters.iceServers);
@@ -825,7 +824,7 @@ public class PeerConnectionClient {
         @Override
         public void onCreateSuccess(SessionDescription sdp) {
             if (localSdp != null) {
-                reportError("Multiple SDP create.");
+                reportError("LocalSdp has created.");
                 return;
             }
             String sdpDescription = sdp.description;
@@ -852,6 +851,7 @@ public class PeerConnectionClient {
                 if (peerConnection == null || isError) {
                     return;
                 }
+                Log.d(TAG, peerConnection+" isInitiator:"+ isInitiator);
                 if (isInitiator) {
                     // For offering peer connection we first create offer and set
                     // local SDP, then after receiving answer set remote SDP.
@@ -898,7 +898,9 @@ public class PeerConnectionClient {
         if (queuedRemoteCandidates != null) {
             Log.d(TAG, "Add " + queuedRemoteCandidates.size() + " remote candidates");
             for (IceCandidate candidate : queuedRemoteCandidates) {
-                peerConnection.addIceCandidate(candidate);
+                if (peerConnection != null) {
+                    peerConnection.addIceCandidate(candidate);
+                }
             }
             queuedRemoteCandidates = null;
         }
@@ -934,7 +936,31 @@ public class PeerConnectionClient {
     }
 
 
-
+    public void setVideoMaxBitrate(@Nullable final Integer maxBitrateKbps) {
+        executor.execute(()->{
+            if (peerConnection==null||localVideoSender==null||isError) {
+                return;
+            }
+            Log.d(TAG, "Requested max video bitrate: " + maxBitrateKbps);
+            if (localVideoSender == null) {
+                Log.w(TAG, "Sender is not ready.");
+                return;
+            }
+            RtpParameters parameters = localVideoSender.getParameters();
+            if (parameters.encodings.size() == 0) {
+                Log.w(TAG, "RtpParameters are not ready.");
+                return;
+            }
+            for (RtpParameters.Encoding encoding : parameters.encodings) {
+                // Null value means no limit.
+                encoding.maxBitrateBps = maxBitrateKbps == null ? null : maxBitrateKbps * BPS_IN_KBPS;
+            }
+            if (!localVideoSender.setParameters(parameters)) {
+                Log.e(TAG, "RtpSender.setParameters failed.");
+            }
+            Log.d(TAG, "Configured max video bitrate to: " + maxBitrateKbps);
+        });
+    }
 
 
 
