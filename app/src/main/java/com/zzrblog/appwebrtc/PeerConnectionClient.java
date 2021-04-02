@@ -17,6 +17,9 @@ import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.RTCStats;
+import org.webrtc.RTCStatsCollectorCallback;
+import org.webrtc.RTCStatsReport;
 import org.webrtc.RtpParameters;
 import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
@@ -25,6 +28,7 @@ import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
 import org.webrtc.SoftwareVideoDecoderFactory;
 import org.webrtc.SoftwareVideoEncoderFactory;
+import org.webrtc.StatsObserver;
 import org.webrtc.StatsReport;
 import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.VideoCapturer;
@@ -49,7 +53,9 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.regex.Matcher;
@@ -794,6 +800,18 @@ public class PeerConnectionClient {
         });
     }
 
+    public void removeRemoteIceCandidates(final IceCandidate[] candidates) {
+        executor.execute(()->{
+            if (peerConnection == null || isError) {
+                return;
+            }
+            // Drain the queued remote candidates if there is any so that
+            // they are processed in the proper order.
+            drainCandidates();
+            peerConnection.removeIceCandidates(candidates);
+        });
+    }
+
     public void setRemoteDescription(final SessionDescription sdp) {
         executor.execute(() -> {
             if (peerConnection == null || isError) {
@@ -932,7 +950,48 @@ public class PeerConnectionClient {
             peerConnection.dispose();
             peerConnection = null;
         }
-        // TODO ... It's not over yet
+        Log.d(TAG, "Closing audio source.");
+        if (audioSource != null) {
+            audioSource.dispose();
+            audioSource = null;
+        }
+        Log.d(TAG, "Stopping capture.");
+        if (videoCapturer != null) {
+            try {
+                videoCapturer.stopCapture();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            videoCapturerStopped = true;
+            videoCapturer.dispose();
+            videoCapturer = null;
+        }
+        Log.d(TAG, "Closing video source.");
+        if (videoSource != null) {
+            videoSource.dispose();
+            videoSource = null;
+        }
+        if (surfaceTextureHelper != null) {
+            surfaceTextureHelper.dispose();
+            surfaceTextureHelper = null;
+        }
+        if (saveRecordedAudioToFile != null) {
+            Log.d(TAG, "Closing audio file for recorded input audio.");
+            saveRecordedAudioToFile.stop();
+            saveRecordedAudioToFile = null;
+        }
+        localRender = null;
+        remoteSinks = null;
+        Log.d(TAG, "Closing peer connection factory.");
+        if (factory != null) {
+            factory.dispose();
+            factory = null;
+        }
+        rootEglBase.release();
+        Log.d(TAG, "Closing peer connection done.");
+        events.onPeerConnectionClosed();
+        PeerConnectionFactory.stopInternalTracingCapture();
+        PeerConnectionFactory.shutdownInternalTracer();
     }
 
 
@@ -962,8 +1021,51 @@ public class PeerConnectionClient {
         });
     }
 
+    public void enableStatsEvents(boolean enable, int periodMs) {
+        if (enable) {
+            try {
+                statsTimer.schedule(new TimerTask() {
+                    @Override
+                    public void run() {
+                        executor.execute(() -> getStats());
+                    }
+                }, 0, periodMs);
+            } catch (Exception e) {
+                Log.e(TAG, "Can not schedule statistics timer", e);
+            }
+        } else {
+            statsTimer.cancel();
+        }
+    }
 
-
+    @SuppressWarnings("deprecation")
+    private void getStats() {
+        if (peerConnection == null || isError) {
+            return;
+        }
+        peerConnection.getStats(new RTCStatsCollectorCallback() {
+            @Override
+            public void onStatsDelivered(RTCStatsReport rtcStatsReport) {
+                Iterator<Map.Entry<String, RTCStats>> itr =
+                        rtcStatsReport.getStatsMap().entrySet().iterator();
+                while(itr.hasNext()) {
+                    Map.Entry<String, RTCStats> entry = (Map.Entry)itr.next();
+                    RTCStats value = entry.getValue();
+                    Log.d(TAG, "PeerConnection.getStats : "+value.toString());
+                }
+            }
+        });
+        // TODO: getStats is deprecated.
+        boolean success = peerConnection.getStats(new StatsObserver() {
+            @Override
+            public void onComplete(final StatsReport[] reports) {
+                events.onPeerConnectionStatsReady(reports);
+            }
+        }, null);
+        if (!success) {
+            Log.e(TAG, "getStats() returns false!");
+        }
+    }
 
 
 
@@ -1109,7 +1211,7 @@ public class PeerConnectionClient {
 
 
     private void reportError(final String errorMessage) {
-        Log.e(TAG, "Peerconnection error: " + errorMessage);
+        Log.e(TAG, "PeerConnection error: " + errorMessage);
         executor.execute(() -> {
             if (!isError) {
                 events.onPeerConnectionError(errorMessage);
