@@ -17,9 +17,6 @@ import org.webrtc.MediaStream;
 import org.webrtc.MediaStreamTrack;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
-import org.webrtc.RTCStats;
-import org.webrtc.RTCStatsCollectorCallback;
-import org.webrtc.RTCStatsReport;
 import org.webrtc.RtpParameters;
 import org.webrtc.RtpReceiver;
 import org.webrtc.RtpSender;
@@ -53,7 +50,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
@@ -1043,18 +1039,18 @@ public class PeerConnectionClient {
         if (peerConnection == null || isError) {
             return;
         }
-        peerConnection.getStats(new RTCStatsCollectorCallback() {
-            @Override
-            public void onStatsDelivered(RTCStatsReport rtcStatsReport) {
-                Iterator<Map.Entry<String, RTCStats>> itr =
-                        rtcStatsReport.getStatsMap().entrySet().iterator();
-                while(itr.hasNext()) {
-                    Map.Entry<String, RTCStats> entry = (Map.Entry)itr.next();
-                    RTCStats value = entry.getValue();
-                    Log.d(TAG, "PeerConnection.getStats : "+value.toString());
-                }
-            }
-        });
+        //peerConnection.getStats(new RTCStatsCollectorCallback() {
+        //    @Override
+        //    public void onStatsDelivered(RTCStatsReport rtcStatsReport) {
+        //        Iterator<Map.Entry<String, RTCStats>> itr =
+        //                rtcStatsReport.getStatsMap().entrySet().iterator();
+        //        while(itr.hasNext()) {
+        //            Map.Entry<String, RTCStats> entry = (Map.Entry)itr.next();
+        //            RTCStats value = entry.getValue();
+        //            Log.d(TAG, "PeerConnection.getStats : "+value.toString());
+        //        }
+        //    }
+        //});
         // TODO: getStats is deprecated.
         boolean success = peerConnection.getStats(new StatsObserver() {
             @Override
