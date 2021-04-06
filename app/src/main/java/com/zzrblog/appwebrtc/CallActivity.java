@@ -372,7 +372,6 @@ public class CallActivity extends AppCompatActivity implements
         ft.commit();
     }
 
-
     private void startCall() {
         if (appRtcClient == null) {
             Log.e(TAG, "AppRTC client is not allocated for a call.");
@@ -401,7 +400,30 @@ public class CallActivity extends AppCompatActivity implements
 
 
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        activityRunning = true;
+        // Video is not paused for screen capture. See onPause.
+        if (peerConnectionClient != null && !screencaptureEnabled) {
+            peerConnectionClient.startVideoSource();
+        }
+        if (cpuMonitor != null) {
+            cpuMonitor.resume();
+        }
+    }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+        activityRunning = false;
+        if (peerConnectionClient != null && !screencaptureEnabled) {
+            peerConnectionClient.stopVideoSource();
+        }
+        if (cpuMonitor != null) {
+            cpuMonitor.pause();
+        }
+    }
 
     private void disconnectWithErrorMessage(final String errorMessage) {
         if (commandLineRun || !activityRunning) {
@@ -474,35 +496,47 @@ public class CallActivity extends AppCompatActivity implements
         finish();
     }
 
-
-
-
+    @Override
+    protected void onDestroy() {
+        Thread.setDefaultUncaughtExceptionHandler(null);
+        disconnect();
+        activityRunning = false;
+        super.onDestroy();
+    }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     ///Start CallFragment.OnCallEvents
     @Override
     public void onCallHangUp() {
-
+        disconnect();
     }
 
     @Override
     public void onCameraSwitch() {
-
+        if (peerConnectionClient != null) {
+            peerConnectionClient.switchCamera();
+        }
     }
 
     @Override
     public void onVideoScalingSwitch(RendererCommon.ScalingType scalingType) {
-
+        fullscreenRenderer.setScalingType(scalingType);
     }
 
     @Override
     public void onCaptureFormatChange(int width, int height, int framerate) {
-
+        if (peerConnectionClient != null) {
+            peerConnectionClient.changeCaptureFormat(width, height, framerate);
+        }
     }
 
     @Override
     public boolean onToggleMic() {
-        return false;
+        if (peerConnectionClient != null) {
+            micEnabled = !micEnabled;
+            peerConnectionClient.setAudioEnabled(micEnabled);
+        }
+        return micEnabled;
     }
     ///End CallFragment.OnCallEvents
     ///////////////////////////////////////////////////////////////////////////////////////////////

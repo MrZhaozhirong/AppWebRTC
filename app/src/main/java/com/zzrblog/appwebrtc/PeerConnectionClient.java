@@ -6,6 +6,7 @@ import android.util.Log;
 
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
+import org.webrtc.CameraVideoCapturer;
 import org.webrtc.DataChannel;
 import org.webrtc.DefaultVideoDecoderFactory;
 import org.webrtc.DefaultVideoEncoderFactory;
@@ -990,6 +991,46 @@ public class PeerConnectionClient {
         PeerConnectionFactory.shutdownInternalTracer();
     }
 
+    public void setAudioEnabled(final boolean enable) {
+        executor.execute(()->{
+            enableAudio = enable;
+            if (localAudioTrack != null) {
+                localAudioTrack.setEnabled(enableAudio);
+            }
+        });
+    }
+    public void setVideoEnabled(final boolean enable) {
+        executor.execute(()->{
+            renderVideo = enable;
+            if (localVideoTrack != null) {
+                localVideoTrack.setEnabled(renderVideo);
+            }
+            if (remoteVideoTrack != null) {
+                remoteVideoTrack.setEnabled(renderVideo);
+            }
+        });
+    }
+
+    public void startVideoSource() {
+        executor.execute(()->{
+            if (videoCapturer != null && videoCapturerStopped) {
+                Log.d(TAG, "Restart video source.");
+                videoCapturer.startCapture(videoWidth, videoHeight, videoFps);
+                videoCapturerStopped = false;
+            }
+        });
+    }
+    public void stopVideoSource() {
+        executor.execute(()->{
+            if (videoCapturer != null && !videoCapturerStopped) {
+                Log.d(TAG, "Stop video source.");
+                try {
+                    videoCapturer.stopCapture();
+                } catch (InterruptedException e) { }
+                videoCapturerStopped = true;
+            }
+        });
+    }
 
     public void setVideoMaxBitrate(@Nullable final Integer maxBitrateKbps) {
         executor.execute(()->{
@@ -1033,7 +1074,6 @@ public class PeerConnectionClient {
             statsTimer.cancel();
         }
     }
-
     @SuppressWarnings("deprecation")
     private void getStats() {
         if (peerConnection == null || isError) {
@@ -1062,6 +1102,38 @@ public class PeerConnectionClient {
             Log.e(TAG, "getStats() returns false!");
         }
     }
+
+    public void switchCamera() {
+        executor.execute(this ::switchCameraInternal);
+    }
+    private void switchCameraInternal() {
+        if (videoCapturer instanceof CameraVideoCapturer) {
+            if (!isVideoCallEnabled() || isError) {
+                Log.e(TAG,
+                        "Failed to switch camera. Video: " + isVideoCallEnabled() + ". Error : " + isError);
+                return; // No video is sent or only one camera is available or error happened.
+            }
+            Log.d(TAG, "Switch camera");
+            CameraVideoCapturer cameraVideoCapturer = (CameraVideoCapturer) videoCapturer;
+            cameraVideoCapturer.switchCamera(null);
+        } else {
+            Log.w(TAG, "Will not switch camera, video caputurer is not a camera");
+        }
+    }
+
+    public void changeCaptureFormat(final int width, final int height, final int framerate) {
+        executor.execute(() -> changeCaptureFormatInternal(width, height, framerate));
+    }
+    private void changeCaptureFormatInternal(int width, int height, int framerate) {
+        if (!isVideoCallEnabled() || isError || videoCapturer == null) {
+            Log.e(TAG, "Failed to change capture format. Video: " + isVideoCallEnabled()
+                            + ". Error : " + isError);
+            return;
+        }
+        Log.d(TAG, "changeCaptureFormat: " + width + "x" + height + "@" + framerate);
+        videoSource.adaptOutputFormat(width, height, framerate);
+    }
+
 
 
 
