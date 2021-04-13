@@ -58,6 +58,7 @@ class WebRtcAudioTrack {
             return 0;
         }
     }
+
     private static final int AUDIO_TRACK_START = 0;
     private static final int AUDIO_TRACK_STOP = 1;
     private long nativeAudioTrack;
