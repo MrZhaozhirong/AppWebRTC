@@ -11,12 +11,12 @@
 package org.webrtc;
 
 public class LibvpxVp9Decoder extends WrappedNativeVideoDecoder {
-  @Override
-  public long createNativeVideoDecoder() {
-    return nativeCreateDecoder();
-  }
+    @Override
+    public long createNativeVideoDecoder() {
+        return nativeCreateDecoder();
+    }
 
-  static native long nativeCreateDecoder();
+    static native long nativeCreateDecoder();
 
-  static native boolean nativeIsSupported();
+    static native boolean nativeIsSupported();
 }

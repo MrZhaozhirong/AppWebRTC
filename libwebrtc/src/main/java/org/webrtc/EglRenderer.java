@@ -452,7 +452,7 @@ public class EglRenderer implements VideoSink {
      *                 It should be lightweight and must not call removeFrameListener.
      * @param scale    The scale of the Bitmap passed to the callback, or 0 if no Bitmap is
      *                 required.
-     * param drawer   Custom drawer to use for this frame listener or null to use the default one.
+     *                 param drawer   Custom drawer to use for this frame listener or null to use the default one.
      */
     public void addFrameListener(
             final FrameListener listener, final float scale, final RendererCommon.GlDrawer drawerParam) {
@@ -466,7 +466,7 @@ public class EglRenderer implements VideoSink {
      *                          It should be lightweight and must not call removeFrameListener.
      * @param scale             The scale of the Bitmap passed to the callback, or 0 if no Bitmap is
      *                          required.
-     * param drawer            Custom drawer to use for this frame listener or null to use the default one.
+     *                          param drawer            Custom drawer to use for this frame listener or null to use the default one.
      * @param applyFpsReduction This callback will not be called for frames that have been dropped by
      *                          FPS reduction.
      */
@@ -483,7 +483,7 @@ public class EglRenderer implements VideoSink {
      * Remove any pending callback that was added with addFrameListener. If the callback is not in
      * the queue, nothing happens. It is ensured that callback won't be called after this method
      * returns.
-     *
+     * <p>
      * param runnable The callback to remove.
      */
     public void removeFrameListener(final FrameListener listener) {

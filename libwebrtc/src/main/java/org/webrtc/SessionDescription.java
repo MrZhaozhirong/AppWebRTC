@@ -18,39 +18,41 @@ import java.util.Locale;
  * to SessionDescriptionInterface as appropriate in the JNI layer.
  */
 public class SessionDescription {
-  /** Java-land enum version of SessionDescriptionInterface's type() string. */
-  public static enum Type {
-    OFFER,
-    PRANSWER,
-    ANSWER,
-    ROLLBACK;
+    /**
+     * Java-land enum version of SessionDescriptionInterface's type() string.
+     */
+    public static enum Type {
+        OFFER,
+        PRANSWER,
+        ANSWER,
+        ROLLBACK;
 
-    public String canonicalForm() {
-      return name().toLowerCase(Locale.US);
+        public String canonicalForm() {
+            return name().toLowerCase(Locale.US);
+        }
+
+        @CalledByNative("Type")
+        public static Type fromCanonicalForm(String canonical) {
+            return Type.valueOf(Type.class, canonical.toUpperCase(Locale.US));
+        }
     }
 
-    @CalledByNative("Type")
-    public static Type fromCanonicalForm(String canonical) {
-      return Type.valueOf(Type.class, canonical.toUpperCase(Locale.US));
+    public final Type type;
+    public final String description;
+
+    @CalledByNative
+    public SessionDescription(Type type, String description) {
+        this.type = type;
+        this.description = description;
     }
-  }
 
-  public final Type type;
-  public final String description;
+    @CalledByNative
+    String getDescription() {
+        return description;
+    }
 
-  @CalledByNative
-  public SessionDescription(Type type, String description) {
-    this.type = type;
-    this.description = description;
-  }
-
-  @CalledByNative
-  String getDescription() {
-    return description;
-  }
-
-  @CalledByNative
-  String getTypeInCanonicalForm() {
-    return type.canonicalForm();
-  }
+    @CalledByNative
+    String getTypeInCanonicalForm() {
+        return type.canonicalForm();
+    }
 }

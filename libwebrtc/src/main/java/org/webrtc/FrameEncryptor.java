@@ -16,11 +16,12 @@ package org.webrtc;
  * FrameEncyptors are extremely performance sensitive as they must process all
  * outgoing video and audio frames. Due to this reason they should always be
  * backed by a native implementation.
+ *
  * @note Not ready for production use.
  */
 public interface FrameEncryptor {
-  /**
-   * @return A FrameEncryptorInterface pointer.
-   */
-  long getNativeFrameEncryptor();
+    /**
+     * @return A FrameEncryptorInterface pointer.
+     */
+    long getNativeFrameEncryptor();
 }

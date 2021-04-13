@@ -18,45 +18,45 @@ import java.util.Map;
  * (codec, stream, transport, etc.) that was inspected to produce the stats.
  */
 public class RTCStatsReport {
-  private final long timestampUs;
-  private final Map<String, RTCStats> stats;
+    private final long timestampUs;
+    private final Map<String, RTCStats> stats;
 
-  public RTCStatsReport(long timestampUs, Map<String, RTCStats> stats) {
-    this.timestampUs = timestampUs;
-    this.stats = stats;
-  }
-
-  // Timestamp in microseconds.
-  public double getTimestampUs() {
-    return timestampUs;
-  }
-
-  // Map of stats object IDs to stats objects. Can be used to easily look up
-  // other stats objects, when they refer to each other by ID.
-  public Map<String, RTCStats> getStatsMap() {
-    return stats;
-  }
-
-  @Override
-  public String toString() {
-    StringBuilder builder = new StringBuilder();
-    builder.append("{ timestampUs: ").append(timestampUs).append(", stats: [\n");
-    boolean first = true;
-    for (RTCStats stat : stats.values()) {
-      if (!first) {
-        builder.append(",\n");
-      }
-      builder.append(stat);
-      first = false;
+    public RTCStatsReport(long timestampUs, Map<String, RTCStats> stats) {
+        this.timestampUs = timestampUs;
+        this.stats = stats;
     }
-    builder.append(" ] }");
-    return builder.toString();
-  }
 
-  // TODO(bugs.webrtc.org/8557) Use ctor directly with full Map type.
-  @SuppressWarnings("unchecked")
-  @CalledByNative
-  private static RTCStatsReport create(long timestampUs, Map stats) {
-    return new RTCStatsReport(timestampUs, stats);
-  }
+    // Timestamp in microseconds.
+    public double getTimestampUs() {
+        return timestampUs;
+    }
+
+    // Map of stats object IDs to stats objects. Can be used to easily look up
+    // other stats objects, when they refer to each other by ID.
+    public Map<String, RTCStats> getStatsMap() {
+        return stats;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("{ timestampUs: ").append(timestampUs).append(", stats: [\n");
+        boolean first = true;
+        for (RTCStats stat : stats.values()) {
+            if (!first) {
+                builder.append(",\n");
+            }
+            builder.append(stat);
+            first = false;
+        }
+        builder.append(" ] }");
+        return builder.toString();
+    }
+
+    // TODO(bugs.webrtc.org/8557) Use ctor directly with full Map type.
+    @SuppressWarnings("unchecked")
+    @CalledByNative
+    private static RTCStatsReport create(long timestampUs, Map stats) {
+        return new RTCStatsReport(timestampUs, stats);
+    }
 }

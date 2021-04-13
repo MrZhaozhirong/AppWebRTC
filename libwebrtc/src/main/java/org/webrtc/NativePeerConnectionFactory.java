@@ -10,11 +10,13 @@
 
 package org.webrtc;
 
-/** Factory for creating webrtc::jni::OwnedPeerConnection instances. */
+/**
+ * Factory for creating webrtc::jni::OwnedPeerConnection instances.
+ */
 public interface NativePeerConnectionFactory {
-  /**
-   * Create a new webrtc::jni::OwnedPeerConnection instance and returns a pointer to it.
-   * The caller takes ownership of the object.
-   */
-  long createNativePeerConnection();
+    /**
+     * Create a new webrtc::jni::OwnedPeerConnection instance and returns a pointer to it.
+     * The caller takes ownership of the object.
+     */
+    long createNativePeerConnection();
 }

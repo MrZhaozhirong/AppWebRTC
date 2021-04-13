@@ -16,11 +16,12 @@ package org.webrtc;
  * FrameDecryptors are extremely performance sensitive as they must process all
  * incoming video and audio frames. Due to this reason they should always be
  * backed by a native implementation
+ *
  * @note Not ready for production use.
  */
 public interface FrameDecryptor {
-  /**
-   * @return A FrameDecryptorInterface pointer.
-   */
-  long getNativeFrameDecryptor();
+    /**
+     * @return A FrameDecryptorInterface pointer.
+     */
+    long getNativeFrameDecryptor();
 }

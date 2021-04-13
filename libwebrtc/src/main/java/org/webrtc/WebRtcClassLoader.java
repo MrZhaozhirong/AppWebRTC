@@ -16,12 +16,12 @@ package org.webrtc;
  * mechanism is unable to automatically determine the appropriate ClassLoader instance.
  */
 class WebRtcClassLoader {
-  @CalledByNative
-  static Object getClassLoader() {
-    Object loader = WebRtcClassLoader.class.getClassLoader();
-    if (loader == null) {
-      throw new RuntimeException("Failed to get WebRTC class loader.");
+    @CalledByNative
+    static Object getClassLoader() {
+        Object loader = WebRtcClassLoader.class.getClassLoader();
+        if (loader == null) {
+            throw new RuntimeException("Failed to get WebRTC class loader.");
+        }
+        return loader;
     }
-    return loader;
-  }
 }

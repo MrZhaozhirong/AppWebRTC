@@ -29,53 +29,55 @@ import java.util.Map;
 // average over the call and recorded when a stream is removed).
 // The metrics can for example be retrieved when a peer connection is closed.
 public class Metrics {
-  private static final String TAG = "Metrics";
+    private static final String TAG = "Metrics";
 
-  public final Map<String, HistogramInfo> map =
-      new HashMap<String, HistogramInfo>(); // <name, HistogramInfo>
+    public final Map<String, HistogramInfo> map =
+            new HashMap<String, HistogramInfo>(); // <name, HistogramInfo>
 
-  @CalledByNative
-  Metrics() {}
-
-  /**
-   * Class holding histogram information.
-   */
-  public static class HistogramInfo {
-    public final int min;
-    public final int max;
-    public final int bucketCount;
-    public final Map<Integer, Integer> samples =
-        new HashMap<Integer, Integer>(); // <value, # of events>
-
-    @CalledByNative("HistogramInfo")
-    public HistogramInfo(int min, int max, int bucketCount) {
-      this.min = min;
-      this.max = max;
-      this.bucketCount = bucketCount;
+    @CalledByNative
+    Metrics() {
     }
 
-    @CalledByNative("HistogramInfo")
-    public void addSample(int value, int numEvents) {
-      samples.put(value, numEvents);
+    /**
+     * Class holding histogram information.
+     */
+    public static class HistogramInfo {
+        public final int min;
+        public final int max;
+        public final int bucketCount;
+        public final Map<Integer, Integer> samples =
+                new HashMap<Integer, Integer>(); // <value, # of events>
+
+        @CalledByNative("HistogramInfo")
+        public HistogramInfo(int min, int max, int bucketCount) {
+            this.min = min;
+            this.max = max;
+            this.bucketCount = bucketCount;
+        }
+
+        @CalledByNative("HistogramInfo")
+        public void addSample(int value, int numEvents) {
+            samples.put(value, numEvents);
+        }
     }
-  }
 
-  @CalledByNative
-  private void add(String name, HistogramInfo info) {
-    map.put(name, info);
-  }
+    @CalledByNative
+    private void add(String name, HistogramInfo info) {
+        map.put(name, info);
+    }
 
-  // Enables gathering of metrics (which can be fetched with getAndReset()).
-  // Must be called before PeerConnectionFactory is created.
-  public static void enable() {
-    nativeEnable();
-  }
+    // Enables gathering of metrics (which can be fetched with getAndReset()).
+    // Must be called before PeerConnectionFactory is created.
+    public static void enable() {
+        nativeEnable();
+    }
 
-  // Gets and clears native histograms.
-  public static Metrics getAndReset() {
-    return nativeGetAndReset();
-  }
+    // Gets and clears native histograms.
+    public static Metrics getAndReset() {
+        return nativeGetAndReset();
+    }
 
-  private static native void nativeEnable();
-  private static native Metrics nativeGetAndReset();
+    private static native void nativeEnable();
+
+    private static native Metrics nativeGetAndReset();
 }

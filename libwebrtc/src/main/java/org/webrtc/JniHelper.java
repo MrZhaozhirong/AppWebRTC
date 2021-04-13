@@ -18,31 +18,31 @@ import java.util.Map;
  * to generate in other ways due to bugs.webrtc.org/8606 and bugs.webrtc.org/8632.
  */
 class JniHelper {
-  // TODO(bugs.webrtc.org/8632): Remove.
-  @CalledByNative
-  static byte[] getStringBytes(String s) {
-    try {
-      return s.getBytes("ISO-8859-1");
-    } catch (UnsupportedEncodingException e) {
-      throw new RuntimeException("ISO-8859-1 is unsupported");
+    // TODO(bugs.webrtc.org/8632): Remove.
+    @CalledByNative
+    static byte[] getStringBytes(String s) {
+        try {
+            return s.getBytes("ISO-8859-1");
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException("ISO-8859-1 is unsupported");
+        }
     }
-  }
 
-  // TODO(bugs.webrtc.org/8632): Remove.
-  @CalledByNative
-  static Object getStringClass() {
-    return String.class;
-  }
+    // TODO(bugs.webrtc.org/8632): Remove.
+    @CalledByNative
+    static Object getStringClass() {
+        return String.class;
+    }
 
-  // TODO(bugs.webrtc.org/8606): Remove.
-  @CalledByNative
-  static Object getKey(Map.Entry entry) {
-    return entry.getKey();
-  }
+    // TODO(bugs.webrtc.org/8606): Remove.
+    @CalledByNative
+    static Object getKey(Map.Entry entry) {
+        return entry.getKey();
+    }
 
-  // TODO(bugs.webrtc.org/8606): Remove.
-  @CalledByNative
-  static Object getValue(Map.Entry entry) {
-    return entry.getValue();
-  }
+    // TODO(bugs.webrtc.org/8606): Remove.
+    @CalledByNative
+    static Object getValue(Map.Entry entry) {
+        return entry.getValue();
+    }
 }
