@@ -18,21 +18,25 @@ package org.webrtc.audio;
  * <p>Note: This class is still under development and may change without notice.
  */
 public interface AudioDeviceModule {
-  /**
-   * Returns a C++ pointer to a webrtc::AudioDeviceModule. Caller does _not_ take ownership and
-   * lifetime is handled through the release() call.
-   */
-  long getNativeAudioDeviceModulePointer();
+    /**
+     * Returns a C++ pointer to a webrtc::AudioDeviceModule. Caller does _not_ take ownership and
+     * lifetime is handled through the release() call.
+     */
+    long getNativeAudioDeviceModulePointer();
 
-  /**
-   * Release resources for this AudioDeviceModule, including native resources. The object should not
-   * be used after this call.
-   */
-  void release();
+    /**
+     * Release resources for this AudioDeviceModule, including native resources. The object should not
+     * be used after this call.
+     */
+    void release();
 
-  /** Control muting/unmuting the speaker. */
-  void setSpeakerMute(boolean mute);
+    /**
+     * Control muting/unmuting the speaker.
+     */
+    void setSpeakerMute(boolean mute);
 
-  /** Control muting/unmuting the microphone. */
-  void setMicrophoneMute(boolean mute);
+    /**
+     * Control muting/unmuting the microphone.
+     */
+    void setMicrophoneMute(boolean mute);
 }

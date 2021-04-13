@@ -11,7 +11,10 @@
 package org.webrtc.audio;
 
 import android.content.Context;
+import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
+
+import androidx.annotation.RequiresApi;
 
 import org.webrtc.JniCommon;
 import org.webrtc.Logging;
@@ -37,6 +40,8 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
         private AudioTrackErrorCallback audioTrackErrorCallback;
         private AudioRecordErrorCallback audioRecordErrorCallback;
         private SamplesReadyCallback samplesReadyCallback;
+        private AudioTrackStateCallback audioTrackStateCallback;
+        private AudioRecordStateCallback audioRecordStateCallback;
         private boolean useHardwareAcousticEchoCanceler = isBuiltInAcousticEchoCancelerSupported();
         private boolean useHardwareNoiseSuppressor = isBuiltInNoiseSuppressorSupported();
         private boolean useStereoInput;
@@ -69,7 +74,6 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
         /**
          * Call this method to specifically override input sample rate.
          */
-        // 设置输入音频采样率
         public Builder setInputSampleRate(int inputSampleRate) {
             Logging.d(TAG, "Input sample rate overridden to: " + inputSampleRate);
             this.inputSampleRate = inputSampleRate;
@@ -79,7 +83,6 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
         /**
          * Call this method to specifically override output sample rate.
          */
-        // 设置输出音频采样率
         public Builder setOutputSampleRate(int outputSampleRate) {
             Logging.d(TAG, "Output sample rate overridden to: " + outputSampleRate);
             this.outputSampleRate = outputSampleRate;
@@ -90,7 +93,6 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
          * Call this to change the audio source. The argument should be one of the values from
          * android.media.MediaRecorder.AudioSource. The default is AudioSource.VOICE_COMMUNICATION.
          */
-        // 设置音频源
         public Builder setAudioSource(int audioSource) {
             this.audioSource = audioSource;
             return this;
@@ -102,8 +104,6 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
          * Default audio data format is PCM 16 bit per sample.
          * Guaranteed to be supported by all devices.
          */
-
-        // 设置音频格式
         public Builder setAudioFormat(int audioFormat) {
             this.audioFormat = audioFormat;
             return this;
@@ -133,12 +133,20 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
             return this;
         }
 
+        public JavaAudioDeviceModule.Builder setAudioTrackStateCallback(JavaAudioDeviceModule.AudioTrackStateCallback audioTrackStateCallback) {
+            this.audioTrackStateCallback = audioTrackStateCallback;
+            return this;
+        }
+
+        public JavaAudioDeviceModule.Builder setAudioRecordStateCallback(JavaAudioDeviceModule.AudioRecordStateCallback audioRecordStateCallback) {
+            this.audioRecordStateCallback = audioRecordStateCallback;
+            return this;
+        }
+
         /**
          * Control if the built-in HW noise suppressor should be used or not. The default is on if it is
          * supported. It is possible to query support by calling isBuiltInNoiseSuppressorSupported().
          */
-
-        // 设置是否开启硬件噪声抑制器，默认如果支持就打开
         public Builder setUseHardwareNoiseSuppressor(boolean useHardwareNoiseSuppressor) {
             if (useHardwareNoiseSuppressor && !isBuiltInNoiseSuppressorSupported()) {
                 Logging.e(TAG, "HW NS not supported");
@@ -153,7 +161,6 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
          * it is supported. It is possible to query support by calling
          * isBuiltInAcousticEchoCancelerSupported().
          */
-        // 设置是否开启内置回声消除，如果支持，默认打开
         public Builder setUseHardwareAcousticEchoCanceler(boolean useHardwareAcousticEchoCanceler) {
             if (useHardwareAcousticEchoCanceler && !isBuiltInAcousticEchoCancelerSupported()) {
                 Logging.e(TAG, "HW AEC not supported");
@@ -166,8 +173,6 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
         /**
          * Control if stereo input should be used or not. The default is mono.
          */
-
-        // 控制是否使用立体声输入
         public Builder setUseStereoInput(boolean useStereoInput) {
             this.useStereoInput = useStereoInput;
             return this;
@@ -176,8 +181,6 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
         /**
          * Control if stereo output should be used or not. The default is mono.
          */
-
-        // 控制是否使用立体声输出
         public Builder setUseStereoOutput(boolean useStereoOutput) {
             this.useStereoOutput = useStereoOutput;
             return this;
@@ -206,10 +209,10 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
                 Logging.d(TAG, "HW AEC will not be used.");
             }
             final WebRtcAudioRecord audioInput = new WebRtcAudioRecord(context, audioManager, audioSource,
-                    audioFormat, audioRecordErrorCallback, samplesReadyCallback,
+                    audioFormat, audioRecordErrorCallback, audioRecordStateCallback, samplesReadyCallback,
                     useHardwareAcousticEchoCanceler, useHardwareNoiseSuppressor);
             final WebRtcAudioTrack audioOutput =
-                    new WebRtcAudioTrack(context, audioManager, audioTrackErrorCallback);
+                    new WebRtcAudioTrack(context, audioManager, audioTrackErrorCallback, audioTrackStateCallback);
             return new JavaAudioDeviceModule(context, audioManager, audioInput, audioOutput,
                     inputSampleRate, outputSampleRate, useStereoInput, useStereoOutput);
         }
@@ -222,7 +225,13 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
         AUDIO_RECORD_START_STATE_MISMATCH,
     }
 
-    public static interface AudioRecordErrorCallback {
+    public interface AudioRecordStateCallback {
+        void onWebRtcAudioRecordStart();
+
+        void onWebRtcAudioRecordStop();
+    }
+
+    public interface AudioRecordErrorCallback {
         void onWebRtcAudioRecordInitError(String errorMessage);
 
         void onWebRtcAudioRecordStartError(AudioRecordStartErrorCode errorCode, String errorMessage);
@@ -285,6 +294,12 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
     public enum AudioTrackStartErrorCode {
         AUDIO_TRACK_START_EXCEPTION,
         AUDIO_TRACK_START_STATE_MISMATCH,
+    }
+
+    public interface AudioTrackStateCallback {
+        void onWebRtcAudioTrackStart();
+
+        void onWebRtcAudioTrackStop();
     }
 
     public static interface AudioTrackErrorCallback {
@@ -369,6 +384,12 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
     public void setMicrophoneMute(boolean mute) {
         Logging.d(TAG, "setMicrophoneMute: " + mute);
         audioInput.setMicrophoneMute(mute);
+    }
+
+    @RequiresApi(23)
+    public void setPreferredInputDevice(AudioDeviceInfo preferredInputDevice) {
+        Logging.d("JavaAudioDeviceModule", "setPreferredInputDevice: " + preferredInputDevice);
+        this.audioInput.setPreferredDevice(preferredInputDevice);
     }
 
     private static native long nativeCreateAudioDeviceModule(Context context,
